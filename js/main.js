@@ -1,42 +1,65 @@
-let walletHistory = [];
-let autoGenerating = false;
 
-function toggleDarkMode() {
-  document.body.classList.toggle("light");
-}
+let walletHistory = [];
+let loopInterval = null;
 
 function generateWallet() {
-  const keyPair = bitcoinjs.ECPair.makeRandom();
-  const { address } = bitcoinjs.payments.p2pkh({ pubkey: keyPair.publicKey });
+  const keyPair = bitcoin.ECPair.makeRandom();
+  const { address } = bitcoin.payments.p2pkh({ pubkey: keyPair.publicKey });
   const wif = keyPair.toWIF();
 
-  axios.get(`https://blockstream.info/api/address/${address}`)
-    .then(res => {
-      const balance = res.data.chain_stats.funded_txo_sum - res.data.chain_stats.spent_txo_sum;
-      const btc = (balance / 1e8).toFixed(8);
-      appendWallet(address, wif, btc);
+  walletHistory.push({ address, wif });
+
+  document.getElementById('walletAddress').textContent = address;
+  document.getElementById('walletPrivateKey').textContent = wif;
+  document.getElementById('walletBalance').textContent = "Loading...";
+
+  fetch(`https://blockstream.info/api/address/${address}`)
+    .then(res => res.json())
+    .then(data => {
+      const confirmed = data.chain_stats.funded_txo_sum - data.chain_stats.spent_txo_sum;
+      const unconfirmed = data.mempool_stats.funded_txo_sum - data.mempool_stats.spent_txo_sum;
+      const balanceBTC = (confirmed + unconfirmed) / 1e8;
+      document.getElementById('walletBalance').textContent = balanceBTC + " BTC";
+
+      // Stop and alert if balance > 0
+      if (balanceBTC > 0) {
+        stopLoop();
+        alert("Ditemukan wallet dengan saldo!\nAddress: " + address + "\nSaldo: " + balanceBTC + " BTC");
+      }
     })
-    .catch(() => appendWallet(address, wif, "Gagal cek saldo"));
+    .catch(() => {
+      document.getElementById('walletBalance').textContent = "Error loading balance";
+    });
+
+  const qr = new QRCode(document.getElementById("qrcode"), {
+    text: address,
+    width: 128,
+    height: 128
+  });
+  document.getElementById("qrcode").innerHTML = "";
+  qr.makeCode(address);
+
+  document.getElementById("walletInfo").scrollIntoView({ behavior: "smooth" });
 }
 
-function appendWallet(address, wif, balance) {
-  const div = document.createElement("div");
-  div.className = "wallet-entry";
-  const qrCanvas = document.createElement("canvas");
-  QRCode.toCanvas(qrCanvas, address);
-  div.innerHTML = \`
-    <p><strong>Address:</strong> \${address}</p>
-    <p><strong>Private Key:</strong> \${wif}</p>
-    <p><strong>Saldo:</strong> \${balance} BTC</p>
-  \`;
-  div.appendChild(qrCanvas);
-  document.getElementById("walletInfo").prepend(div);
-  walletHistory.push({ address, wif, balance });
+function toggleLoop() {
+  if (!loopInterval) {
+    loopInterval = setInterval(generateWallet, 3000);
+  }
 }
 
-function exportWallets() {
-  const content = walletHistory.map(w => \`\${w.address},\${w.wif},\${w.balance} BTC\`).join("\n");
-  const blob = new Blob([content], { type: "text/plain" });
+function stopLoop() {
+  clearInterval(loopInterval);
+  loopInterval = null;
+}
+
+function exportHistory() {
+  if (walletHistory.length === 0) {
+    alert("No wallet history yet.");
+    return;
+  }
+  const data = walletHistory.map(w => `Address: ${w.address}\nPrivate Key: ${w.wif}`).join("\n\n");
+  const blob = new Blob([data], { type: "text/plain" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
   a.download = "wallet-history.txt";
@@ -45,17 +68,13 @@ function exportWallets() {
 
 function validateMnemonic() {
   const input = document.getElementById("mnemonicInput").value.trim();
-  const isValid = bip39.validateMnemonic(input);
-  alert(isValid ? "Mnemonic valid!" : "Mnemonic tidak valid!");
+  if (!input) {
+    alert("Please enter a mnemonic.");
+  } else {
+    alert("Feature not fully implemented.");
+  }
 }
 
-function startAuto() {
-  if (autoGenerating) return;
-  autoGenerating = true;
-  const loop = async () => {
-    if (!autoGenerating) return;
-    generateWallet();
-    setTimeout(loop, 3000);
-  };
-  loop();
+function toggleDarkMode() {
+  document.body.classList.toggle("dark-mode");
 }
