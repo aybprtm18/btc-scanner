@@ -1,26 +1,35 @@
+
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>BTC Wallet Scanner</title>
-  <link rel="stylesheet" href="css/style.css"/>
+  <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-  <div class="container">
-    <h1>Bitcoin Wallet Scanner</h1>
-    <button onclick="toggleDarkMode()">Toggle Dark Mode</button>
-    <button onclick="generateWallet()">Generate Wallet</button>
-    <button onclick="startAuto()">Auto Generate (Loop)</button>
-    <button onclick="exportWallets()">Export History</button>
-    <input type="text" id="mnemonicInput" placeholder="Validasi mnemonic manual"/>
-    <button onclick="validateMnemonic()">Validate</button>
-    <div id="walletInfo"></div>
+  <div id="app">
+    <h1>BTC Wallet Scanner</h1>
+    <div class="button-group">
+      <button onclick="generateWallet()">Generate Wallet</button>
+      <button onclick="toggleLoop()">Auto Generate (Loop)</button>
+      <button onclick="stopLoop()">Stop Loop</button>
+      <button onclick="exportHistory()">Export History</button>
+      <button onclick="toggleDarkMode()">Toggle Dark Mode</button>
+    </div>
+    <br>
+    <input type="text" id="mnemonicInput" placeholder="Enter Mnemonic">
+    <button onclick="validateMnemonic()">Validate Mnemonic</button>
+    <br><br>
+    <div id="walletInfo">
+      <p><strong>Address:</strong> <span id="walletAddress">-</span></p>
+      <p><strong>Private Key (WIF):</strong> <span id="walletPrivateKey">-</span></p>
+      <p><strong>Saldo:</strong> <span id="walletBalance">Simulasi</span></p>
+    </div>
+    <div id="qrcode"></div>
   </div>
-  <script src="https://cdn.jsdelivr.net/npm/bitcoinjs-lib@6.1.0"></script>
-  <script src="https://cdn.jsdelivr.net/npm/bip39@3.0.4"></script>
-  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+  <script src="js/bitcoinjs-lib.js"></script>
+  <script src="js/qrcode.min.js"></script>
   <script src="js/main.js"></script>
 </body>
 </html>
