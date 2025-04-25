@@ -10,6 +10,7 @@
 <body>
   <div id="app">
     <h1>BTC Wallet Scanner</h1>
+    <div id="statusBar">Siap</div>
     <div class="button-group">
       <button onclick="generateWallet()">Generate Wallet</button>
       <button onclick="toggleLoop()">Auto Generate (Loop)</button>
@@ -23,7 +24,8 @@
     <br><br>
     <div id="walletInfo">
       <p><strong>Address:</strong> <span id="walletAddress">-</span></p>
-      <p><strong>Private Key (WIF):</strong> <span id="walletPrivateKey">-</span></p>
+<p><strong>Saldo BTC:</strong> <span id="walletBalance">-</span></p>
+<p><strong>Private Key:</strong> <span id="walletPrivateKey">-</span></p>
       <p><strong>Saldo:</strong> <span id="walletBalance">Simulasi</span></p>
     </div>
     <div id="qrcode"></div>
