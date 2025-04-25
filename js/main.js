@@ -1,80 +1,40 @@
+// main.js
 
-let walletHistory = [];
-let loopInterval = null;
+const wallets = []; let autoGenerating = false;
 
-function generateWallet() {
-  const keyPair = bitcoin.ECPair.makeRandom();
-  const { address } = bitcoin.payments.p2pkh({ pubkey: keyPair.publicKey });
-  const wif = keyPair.toWIF();
+async function generateWallet() { updateStatus("Scanning..."); const mnemonic = bip39.generateMnemonic(); const seed = await bip39.mnemonicToSeed(mnemonic); const root = bitcoin.bip32.fromSeed(seed); const child = root.derivePath("m/44'/0'/0'/0/0"); const { address } = bitcoin.payments.p2pkh({ pubkey: child.publicKey });
 
-  walletHistory.push({ address, wif });
+await checkBalance(address, mnemonic); }
 
-  document.getElementById('walletAddress').textContent = address;
-  document.getElementById('walletPrivateKey').textContent = wif;
-  document.getElementById('walletBalance').textContent = "Loading...";
+async function checkBalance(address, mnemonic) { try { const response = await axios.get(https://api.blockcypher.com/v1/btc/main/addrs/${address}/balance); const balance = response.data.final_balance;
 
-  fetch(`https://blockstream.info/api/address/${address}`)
-    .then(res => res.json())
-    .then(data => {
-      const confirmed = data.chain_stats.funded_txo_sum - data.chain_stats.spent_txo_sum;
-      const unconfirmed = data.mempool_stats.funded_txo_sum - data.mempool_stats.spent_txo_sum;
-      const balanceBTC = (confirmed + unconfirmed) / 1e8;
-      document.getElementById('walletBalance').textContent = balanceBTC + " BTC";
+const walletData = {
+  address,
+  mnemonic,
+  balance
+};
 
-      // Stop and alert if balance > 0
-      if (balanceBTC > 0) {
-        stopLoop();
-        alert("Ditemukan wallet dengan saldo!\nAddress: " + address + "\nSaldo: " + balanceBTC + " BTC");
-      }
-    })
-    .catch(() => {
-      document.getElementById('walletBalance').textContent = "Error loading balance";
-    });
+wallets.push(walletData);
 
-  const qr = new QRCode(document.getElementById("qrcode"), {
-    text: address,
-    width: 128,
-    height: 128
-  });
-  document.getElementById("qrcode").innerHTML = "";
-  qr.makeCode(address);
-
-  document.getElementById("walletInfo").scrollIntoView({ behavior: "smooth" });
+if (balance > 0) {
+  displayWallet(walletData);
+  updateStatus("Found wallet with balance!");
+  autoGenerating = false;
+} else {
+  updateStatus("No balance found.");
 }
 
-function toggleLoop() {
-  if (!loopInterval) {
-    loopInterval = setInterval(generateWallet, 3000);
-  }
-}
+} catch (error) { console.error("Error checking balance:", error); updateStatus("Error checking balance"); } }
 
-function stopLoop() {
-  clearInterval(loopInterval);
-  loopInterval = null;
-}
+function displayWallet(wallet) { const infoDiv = document.getElementById("walletInfo"); const div = document.createElement("div"); div.className = "wallet-entry"; div.innerHTML = <p><strong>Address:</strong> ${wallet.address}</p> <p><strong>Mnemonic:</strong> ${wallet.mnemonic}</p> <p><strong>Balance:</strong> ${wallet.balance} satoshi</p> <hr/>; infoDiv.prepend(div); }
 
-function exportHistory() {
-  if (walletHistory.length === 0) {
-    alert("No wallet history yet.");
-    return;
-  }
-  const data = walletHistory.map(w => `Address: ${w.address}\nPrivate Key: ${w.wif}`).join("\n\n");
-  const blob = new Blob([data], { type: "text/plain" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "wallet-history.txt";
-  a.click();
-}
+function startAuto() { autoGenerating = true; updateStatus("Auto scanning started..."); const loop = async () => { if (!autoGenerating) return; await generateWallet(); setTimeout(loop, 1000); // Delay per wallet scan }; loop(); }
 
-function validateMnemonic() {
-  const input = document.getElementById("mnemonicInput").value.trim();
-  if (!input) {
-    alert("Please enter a mnemonic.");
-  } else {
-    alert("Feature not fully implemented.");
-  }
-}
+function exportWallets() { const csvContent = wallets.map(w => ${w.address},${w.mnemonic},${w.balance}).join("\n"); const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" }); const url = URL.createObjectURL(blob); const link = document.createElement("a"); link.setAttribute("href", url); link.setAttribute("download", "wallets.csv"); link.click(); }
 
-function toggleDarkMode() {
-  document.body.classList.toggle("dark-mode");
-}
+function toggleDarkMode() { document.body.classList.toggle("dark-mode"); }
+
+function validateMnemonic() { const input = document.getElementById("mnemonicInput").value.trim(); if (!bip39.validateMnemonic(input)) { alert("Mnemonic tidak valid."); return; } alert("Mnemonic valid."); }
+
+function updateStatus(text) { let statusBar = document.getElementById("statusBar"); if (!statusBar) { statusBar = document.createElement("div"); statusBar.id = "statusBar"; statusBar.style.margin = "10px 0"; statusBar.style.fontWeight = "bold"; document.querySelector(".container").prepend(statusBar); } statusBar.textContent = text; }
+
