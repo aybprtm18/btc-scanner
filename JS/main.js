@@ -1,10 +1,21 @@
-async function generateWallet() {
-  const res = await fetch("https://blockchain.info/q/newaddress");
-  const { address, private: priv } = await res.json();
+const bitcoin = window.bitcoinjs;
+const axios = window.axios;
 
-  document.getElementById("walletInfo").innerHTML = `
-    <p><strong>Address:</strong> ${address}</p>
-    <p><strong>Private Key (WIF):</strong> ${priv}</p>
-    <p><em>Saldo dicek otomatis (fitur selanjutnya)</em></p>
-  `;
+async function generateWallet() {
+  const keyPair = bitcoin.ECPair.makeRandom();
+  const { address } = bitcoin.payments.p2pkh({ pubkey: keyPair.publicKey });
+  const wif = keyPair.toWIF();
+
+  document.getElementById("address").innerText = address;
+  document.getElementById("privateKey").innerText = wif;
+
+  const balanceSpan = document.getElementById("balance");
+  balanceSpan.innerText = "Loading...";
+  try {
+    const res = await axios.get(`https://blockstream.info/api/address/${address}`);
+    const balance = res.data.chain_stats.funded_txo_sum - res.data.chain_stats.spent_txo_sum;
+    balanceSpan.innerText = (balance / 1e8).toFixed(8) + " BTC";
+  } catch (err) {
+    balanceSpan.innerText = "Gagal cek saldo";
+  }
 }
