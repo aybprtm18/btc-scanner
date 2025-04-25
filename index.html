@@ -10,8 +10,14 @@
   <div class="container">
     <h1>Bitcoin Wallet Generator & Checker</h1>
     <button onclick="generateWallet()">Generate Wallet</button>
-    <div id="walletInfo"></div>
+    <div id="walletInfo">
+      <p><strong>Address:</strong> <span id="address">-</span></p>
+      <p><strong>Private Key (WIF):</strong> <span id="privateKey">-</span></p>
+      <p><strong>Saldo:</strong> <span id="balance">Loading...</span></p>
+    </div>
   </div>
+  <script src="https://cdn.jsdelivr.net/npm/bitcoinjs-lib@6.1.0"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
   <script src="js/main.js"></script>
 </body>
 </html>
