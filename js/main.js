@@ -16,28 +16,29 @@ async function generateMultipleWallets(count) {
     for (let i = 0; i < count; i++) {
         if (!autoGenerating) break;
         await generateWallet();
-        await new Promise(r => setTimeout(r, 500)); // Delay untuk hindari API limit
+        await new Promise(r => setTimeout(r, 200)); // Lebih cepat, tapi masih aman
     }
     updateStatus("Mass generation complete");
 }
 
 async function checkBalance(address, mnemonic) {
     try {
-        const response = await axios.get(`https://api.blockcypher.com/v1/btc/main/addrs/${address}/balance`);
-        const balance = response.data.final_balance;
+        const response = await fetch(`https://blockchain.info/q/addressbalance/${address}?cors=true`);
+        if (!response.ok) throw new Error('Failed to fetch balance');
+        const balanceSatoshi = await response.text();
+        const balanceBTC = parseFloat(balanceSatoshi) / 100000000;
 
-        const walletData = {
-            address,
-            mnemonic,
-            balance
-        };
+        if (balanceBTC > 0) {
+            const walletData = {
+                address,
+                mnemonic,
+                balance: balanceBTC
+            };
 
-        wallets.push(walletData);
-        displayWallet(walletData);
-
-        if (balance > 0) {
+            wallets.push(walletData);
+            displayWallet(walletData);
             updateStatus("Found wallet with balance!");
-            autoGenerating = false;
+            autoGenerating = false; // Stop otomatis kalau ketemu wallet isi
         }
     } catch (err) {
         console.error("Balance check error", err);
@@ -49,17 +50,16 @@ function displayWallet({ address, mnemonic, balance }) {
     row.innerHTML = `
         <td>${address}</td>
         <td>${mnemonic}</td>
-        <td>${balance} satoshi</td>
+        <td>${balance} BTC</td>
     `;
     document.querySelector("#wallet-table tbody").appendChild(row);
 
-    // Card view ala matamata
     const card = document.createElement("div");
     card.className = "wallet-card";
     card.innerHTML = `
         <p><strong>Address:</strong> ${address}</p>
         <p><strong>Mnemonic:</strong> ${mnemonic}</p>
-        <p><strong>Balance:</strong> ${balance} satoshi</p>
+        <p><strong>Balance:</strong> ${balance} BTC</p>
     `;
     document.getElementById("wallet-cards").prepend(card);
 }
