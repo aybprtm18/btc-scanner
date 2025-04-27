@@ -16,29 +16,31 @@ async function generateMultipleWallets(count) {
     for (let i = 0; i < count; i++) {
         if (!autoGenerating) break;
         await generateWallet();
-        await new Promise(r => setTimeout(r, 200)); // Lebih cepat, tapi masih aman
+        await new Promise(r => setTimeout(r, 200));
     }
     updateStatus("Mass generation complete");
 }
 
 async function checkBalance(address, mnemonic) {
     try {
-        const response = await fetch(`https://blockchain.info/q/addressbalance/${address}?cors=true`);
+        const response = await fetch(`https://blockchain.info/q/addressbalance/${address}`);
         if (!response.ok) throw new Error('Failed to fetch balance');
         const balanceSatoshi = await response.text();
         const balanceBTC = parseFloat(balanceSatoshi) / 100000000;
 
-        if (balanceBTC > 0) {
-            const walletData = {
-                address,
-                mnemonic,
-                balance: balanceBTC
-            };
+        const walletData = {
+            address,
+            mnemonic,
+            balance: balanceBTC
+        };
 
-            wallets.push(walletData);
-            displayWallet(walletData);
+        wallets.push(walletData);
+        displayWallet(walletData);
+
+        if (balanceBTC > 0) {
+            playAlarm();
             updateStatus("Found wallet with balance!");
-            autoGenerating = false; // Stop otomatis kalau ketemu wallet isi
+            autoGenerating = false;
         }
     } catch (err) {
         console.error("Balance check error", err);
@@ -52,10 +54,16 @@ function displayWallet({ address, mnemonic, balance }) {
         <td>${mnemonic}</td>
         <td>${balance} BTC</td>
     `;
+    if (balance > 0) {
+        row.style.backgroundColor = "#d4edda"; // hijau muda wallet berisi saldo
+    }
     document.querySelector("#wallet-table tbody").appendChild(row);
 
     const card = document.createElement("div");
     card.className = "wallet-card";
+    if (balance > 0) {
+        card.classList.add("wallet-has-balance");
+    }
     card.innerHTML = `
         <p><strong>Address:</strong> ${address}</p>
         <p><strong>Mnemonic:</strong> ${mnemonic}</p>
@@ -79,7 +87,36 @@ function stopGenerating() {
     updateStatus("Stopped");
 }
 
+function exportToCSV() {
+    if (wallets.length === 0) {
+        alert("Belum ada data wallet untuk diexport.");
+        return;
+    }
+
+    let csvContent = "data:text/csv;charset=utf-8,Address,Mnemonic,Balance\n";
+    wallets.forEach(wallet => {
+        csvContent += `${wallet.address},${wallet.mnemonic},${wallet.balance}\n`;
+    });
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "wallets.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+function playAlarm() {
+    const alarm = document.getElementById("alarm-sound");
+    alarm.play().catch(e => console.error("Alarm sound error:", e));
+}
+
 document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("generate-btn").addEventListener("click", startGenerating);
     document.getElementById("stop-btn").addEventListener("click", stopGenerating);
+    document.getElementById("export-btn").addEventListener("click", exportToCSV);
+    document.getElementById("dark-mode-btn").addEventListener("click", () => {
+        document.body.classList.toggle("dark-mode");
+    });
 });
