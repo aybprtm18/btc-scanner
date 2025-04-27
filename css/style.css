@@ -24,6 +24,12 @@ h1 {
   box-shadow: 0 0 10px rgba(0,0,0,0.1);
   width: 280px;
   word-wrap: break-word;
+  transition: background 0.3s;
+}
+
+.wallet-card.wallet-has-balance {
+  background: #d4edda; /* hijau muda untuk wallet berisi saldo */
+  border: 2px solid #28a745;
 }
 
 button {
@@ -49,4 +55,30 @@ th, td {
 #status {
   margin: 10px 0;
   font-weight: bold;
+}
+
+/* DARK MODE */
+body.dark-mode {
+  background-color: #121212;
+  color: #ffffff;
+}
+
+body.dark-mode .wallet-card {
+  background: #1e1e1e;
+  color: #ffffff;
+}
+
+body.dark-mode table {
+  background: #1e1e1e;
+  color: #ffffff;
+}
+
+body.dark-mode th, body.dark-mode td {
+  border-color: #555;
+}
+
+body.dark-mode button {
+  background-color: #333;
+  color: #fff;
+  border: 1px solid #555;
 }
