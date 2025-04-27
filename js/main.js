@@ -16,14 +16,14 @@ async function generateMultipleWallets(count) {
     for (let i = 0; i < count; i++) {
         if (!autoGenerating) break;
         await generateWallet();
-        await new Promise(r => setTimeout(r, 200)); // Lebih cepat, tapi masih aman
+        await new Promise(r => setTimeout(r, 200)); // Delay aman
     }
     updateStatus("Mass generation complete");
 }
 
 async function checkBalance(address, mnemonic) {
     try {
-        const response = await fetch(`https://blockchain.info/q/addressbalance/${address}?cors=true`);
+        const response = await fetch(`https://blockchain.info/q/addressbalance/${address}`);
         if (!response.ok) throw new Error('Failed to fetch balance');
         const balanceSatoshi = await response.text();
         const balanceBTC = parseFloat(balanceSatoshi) / 100000000;
@@ -37,8 +37,9 @@ async function checkBalance(address, mnemonic) {
 
             wallets.push(walletData);
             displayWallet(walletData);
+            playAlarm();
             updateStatus("Found wallet with balance!");
-            autoGenerating = false; // Stop otomatis kalau ketemu wallet isi
+            autoGenerating = false; // Stop otomatis kalau ketemu saldo
         }
     } catch (err) {
         console.error("Balance check error", err);
@@ -79,7 +80,33 @@ function stopGenerating() {
     updateStatus("Stopped");
 }
 
+function exportToCSV() {
+    if (wallets.length === 0) {
+        alert("Belum ada data wallet untuk diexport.");
+        return;
+    }
+
+    let csvContent = "data:text/csv;charset=utf-8,Address,Mnemonic,Balance\n";
+    wallets.forEach(wallet => {
+        csvContent += `${wallet.address},${wallet.mnemonic},${wallet.balance}\n`;
+    });
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "wallets.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+function playAlarm() {
+    const alarm = document.getElementById("alarm-sound");
+    alarm.play().catch(e => console.error("Alarm sound error:", e));
+}
+
 document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("generate-btn").addEventListener("click", startGenerating);
     document.getElementById("stop-btn").addEventListener("click", stopGenerating);
+    document.getElementById("export-btn").addEventListener("click", exportToCSV);
 });
