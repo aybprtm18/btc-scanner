@@ -1,122 +1,65 @@
-const wallets = [];
-let autoGenerating = false;
+let addressList = [];
 
-async function generateWallet() {
-    updateStatus("Scanning...");
-    const mnemonic = bip39.generateMnemonic();
-    const seed = await bip39.mnemonicToSeed(mnemonic);
-    const root = bitcoin.bip32.fromSeed(seed);
-    const child = root.derivePath("m/44'/0'/0'/0/0");
-    const { address } = bitcoin.payments.p2pkh({ pubkey: child.publicKey });
+document.getElementById("file-input").addEventListener("change", handleFile);
+document.getElementById("start-scan").addEventListener("click", startScanning);
 
-    await checkBalance(address, mnemonic);
+function handleFile(event) {
+  const file = event.target.files[0];
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    addressList = e.target.result.split(/\r?\n/).filter(line => line.trim() !== "");
+    alert(`Berhasil memuat ${addressList.length} address dari file!`);
+  };
+  reader.readAsText(file);
 }
 
-async function generateMultipleWallets(count) {
-    for (let i = 0; i < count; i++) {
-        if (!autoGenerating) break;
-        await generateWallet();
-        await new Promise(r => setTimeout(r, 200));
-    }
-    updateStatus("Mass generation complete");
-}
+async function startScanning() {
+  if (addressList.length === 0) {
+    alert("Belum ada address yang dimuat!");
+    return;
+  }
 
-async function checkBalance(address, mnemonic) {
-    try {
-        const response = await fetch(`https://blockchain.info/q/addressbalance/${address}`);
-        if (!response.ok) throw new Error('Failed to fetch balance');
-        const balanceSatoshi = await response.text();
-        const balanceBTC = parseFloat(balanceSatoshi) / 100000000;
+  for (let i = 0; i < addressList.length; i++) {
+    const address = addressList[i];
+    const balance = await getBalance(address);
 
-        const walletData = {
-            address,
-            mnemonic,
-            balance: balanceBTC
-        };
+    displayWallet(address, balance);
 
-        wallets.push(walletData);
-        displayWallet(walletData);
-
-        if (balanceBTC > 0) {
-            playAlarm();
-            updateStatus("Found wallet with balance!");
-            autoGenerating = false;
-        }
-    } catch (err) {
-        console.error("Balance check error", err);
-    }
-}
-
-function displayWallet({ address, mnemonic, balance }) {
-    const row = document.createElement("tr");
-    row.innerHTML = `
-        <td>${address}</td>
-        <td>${mnemonic}</td>
-        <td>${balance} BTC</td>
-    `;
     if (balance > 0) {
-        row.style.backgroundColor = "#d4edda"; // hijau muda wallet berisi saldo
+      playAlarm();
     }
-    document.querySelector("#wallet-table tbody").appendChild(row);
-
-    const card = document.createElement("div");
-    card.className = "wallet-card";
-    if (balance > 0) {
-        card.classList.add("wallet-has-balance");
-    }
-    card.innerHTML = `
-        <p><strong>Address:</strong> ${address}</p>
-        <p><strong>Mnemonic:</strong> ${mnemonic}</p>
-        <p><strong>Balance:</strong> ${balance} BTC</p>
-    `;
-    document.getElementById("wallet-cards").prepend(card);
+    
+    await new Promise(r => setTimeout(r, 300)); // delay untuk hindari banned API
+  }
 }
 
-function updateStatus(text) {
-    document.getElementById("status").innerText = text;
+async function getBalance(address) {
+  try {
+    const response = await fetch(`https://blockchain.info/q/addressbalance/${address}`);
+    if (!response.ok) throw new Error('Failed to fetch balance');
+    const balanceSatoshi = await response.text();
+    return parseFloat(balanceSatoshi) / 100000000; // konversi ke BTC
+  } catch (err) {
+    console.error("Error fetching balance:", err);
+    return 0;
+  }
 }
 
-function startGenerating() {
-    autoGenerating = true;
-    const count = parseInt(document.getElementById("wallet-count").value || "10");
-    generateMultipleWallets(count);
-}
-
-function stopGenerating() {
-    autoGenerating = false;
-    updateStatus("Stopped");
-}
-
-function exportToCSV() {
-    if (wallets.length === 0) {
-        alert("Belum ada data wallet untuk diexport.");
-        return;
-    }
-
-    let csvContent = "data:text/csv;charset=utf-8,Address,Mnemonic,Balance\n";
-    wallets.forEach(wallet => {
-        csvContent += `${wallet.address},${wallet.mnemonic},${wallet.balance}\n`;
-    });
-
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "wallets.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+function displayWallet(address, balance) {
+  const container = document.getElementById("wallet-list");
+  const card = document.createElement("div");
+  card.style.padding = "10px";
+  card.style.margin = "10px";
+  card.style.border = "1px solid #ccc";
+  card.style.backgroundColor = balance > 0 ? "#d4edda" : "#f8d7da"; // hijau kalau ada saldo
+  card.innerHTML = `
+    <p><strong>Address:</strong> ${address}</p>
+    <p><strong>Balance:</strong> ${balance} BTC</p>
+  `;
+  container.appendChild(card);
 }
 
 function playAlarm() {
-    const alarm = document.getElementById("alarm-sound");
-    alarm.play().catch(e => console.error("Alarm sound error:", e));
+  const alarm = document.getElementById("alarm-sound");
+  alarm.play().catch(e => console.error("Alarm sound error:", e));
 }
-
-document.addEventListener("DOMContentLoaded", () => {
-    document.getElementById("generate-btn").addEventListener("click", startGenerating);
-    document.getElementById("stop-btn").addEventListener("click", stopGenerating);
-    document.getElementById("export-btn").addEventListener("click", exportToCSV);
-    document.getElementById("dark-mode-btn").addEventListener("click", () => {
-        document.body.classList.toggle("dark-mode");
-    });
-});
