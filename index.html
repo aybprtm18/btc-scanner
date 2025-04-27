@@ -14,6 +14,7 @@
   <input type="number" id="wallet-count" value="10" min="1">
   <button id="generate-btn">Mulai Scan</button>
   <button id="stop-btn">Stop</button>
+  <button id="export-btn">Export CSV</button>
 
   <div id="wallet-cards">
     <p>Belum ada data wallet. Klik tombol <b>"Mulai Scan"</b> untuk memulai scanning.</p>
@@ -24,7 +25,7 @@
       <tr>
         <th>Alamat</th>
         <th>Mnemonic</th>
-        <th>Saldo</th>
+        <th>Saldo (BTC)</th>
       </tr>
     </thead>
     <tbody>
@@ -33,6 +34,8 @@
       </tr>
     </tbody>
   </table>
+
+  <audio id="alarm-sound" src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg" preload="auto"></audio>
 
   <script src="js/bitcoinjs-lib.js"></script>
   <script src="js/qrcode.min.js"></script>
