@@ -1,44 +1,47 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Bitcoin Wallet Generator</title>
-  <script src="https://cdn.jsdelivr.net/gh/pointbiz/bitcoinjs-lib-browser@master/bitcoinjs-lib.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/bip39@3.0.4/dist/bip39.browser.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.0/build/qrcode.min.js"></script>
-  <style>
-    body { font-family: sans-serif; padding: 20px; max-width: 600px; margin: auto; }
-    h1 { text-align: center; }
-    button { width: 100%; padding: 10px; margin: 20px 0; font-size: 18px; }
-    .output { word-break: break-all; }
-    canvas { display: block; margin: 20px auto; }
-  </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BTC Wallet Scanner</title>
+  <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-  <h1>Bitcoin Wallet Generator</h1>
-  <button onclick="generate()">Generate Wallet</button>
-  <div class="output">
-    <p><strong>Address:</strong> <span id="address"></span></p>
-    <p><strong>Private Key (WIF):</strong> <span id="privateKey"></span></p>
-    <canvas id="qrcode"></canvas>
+  <h1>BTC Wallet Scanner</h1>
+  <p id="status">Idle</p>
+
+  <label for="wallet-count">Jumlah wallet:</label>
+  <input type="number" id="wallet-count" value="10" min="1">
+  <button id="generate-btn">Mulai Scan</button>
+  <button id="stop-btn">Stop</button>
+  <button id="export-btn">Export CSV</button>
+  <button id="dark-mode-btn">Toggle Dark Mode</button>
+
+  <div id="wallet-cards">
+    <p>Belum ada data wallet. Klik tombol <b>"Mulai Scan"</b> untuk memulai scanning.</p>
   </div>
 
-  <script>
-    async function generate() {
-      const seed = await bip39.mnemonicToSeed(bip39.generateMnemonic());
-      const root = bitcoinjs.bip32.fromSeed(seed);
-      const child = root.derivePath("m/44'/0'/0'/0/0");
-      const { address } = bitcoinjs.payments.p2pkh({ pubkey: child.publicKey });
-      const wif = child.toWIF();
+  <table id="wallet-table" border="1">
+    <thead>
+      <tr>
+        <th>Alamat</th>
+        <th>Mnemonic</th>
+        <th>Saldo (BTC)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td colspan="3" style="text-align:center;">Data wallet akan muncul di sini setelah scan dimulai.</td>
+      </tr>
+    </tbody>
+  </table>
 
-      document.getElementById("address").textContent = address;
-      document.getElementById("privateKey").textContent = wif;
+  <audio id="alarm-sound" src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg" preload="auto"></audio>
 
-      QRCode.toCanvas(document.getElementById("qrcode"), address, function (error) {
-        if (error) console.error(error);
-      });
-    }
-  </script>
+  <script src="js/bitcoinjs-lib.js"></script>
+  <script src="js/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bip39@3.1.0/dist/index.browser.min.js"></script>
+  <script src="js/main.js"></script>
 </body>
 </html>
