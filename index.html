@@ -1,83 +1,83 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bps Btc Hunter</title>
-  <link rel="stylesheet" href="css/style.css">
+  <title>Old Dormant Bitcoin Hunter</title>
   <style>
     body {
       background-color: black;
       color: yellow;
-      font-family: monospace;
+      font-family: 'Courier New', monospace;
       text-align: center;
       margin: 0;
       padding: 20px;
     }
-    .wallet {
-      margin: 10px 0;
-      padding: 10px;
-      background-color: #222;
-      border-radius: 5px;
-    }
-    .found {
-      background-color: green;
-      color: white;
-      animation: blink 1s infinite;
-    }
-    @keyframes blink {
-      0%, 100% {opacity: 1;}
-      50% {opacity: 0.5;}
+    h1 {
+      margin-bottom: 20px;
     }
     button {
-      margin: 5px;
+      margin: 10px;
       padding: 10px 20px;
-      background-color: orange;
-      border: none;
-      color: black;
       font-weight: bold;
+      background-color: orange;
+      color: black;
+      border: none;
       border-radius: 5px;
       cursor: pointer;
     }
     button:hover {
       background-color: darkorange;
     }
+    #wallets {
+      margin-top: 20px;
+      max-height: 400px;
+      overflow-y: auto;
+      text-align: left;
+    }
+    .wallet {
+      background-color: #111;
+      padding: 10px;
+      margin-bottom: 10px;
+      border: 1px solid #333;
+      border-radius: 5px;
+      font-size: 14px;
+    }
+    .found {
+      background-color: darkgreen;
+      color: white;
+    }
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/bitcoinjs-lib@6.1.0/dist/bitcoinjs-lib.min.js"></script>
 </head>
-<body>
-  <h1>Bps Btc Hunter</h1>
+<body>  <h1>Old Dormant Bitcoin Hunter</h1>
   <button onclick="generateWallet()">Generate Wallet</button>
-  <button onclick="startAutoReload()">Start Auto Reload</button>
-  <div id="wallets"></div>
-
-  <script
-  src="https://cdn.jsdelivr.net/npm/bitcoinjs-lib@6.1.0/dist/bitcoinjs-lib.min.js"></script>
+  <button onclick="startAutoReload()">Start Auto Reload</button>  <div id="wallets"></div>  <script>
     let autoReload = false;
     let reloadInterval;
 
-    function generateWallet() {
+    async function generateWallet() {
       const keyPair = bitcoin.ECPair.makeRandom();
       const { address } = bitcoin.payments.p2pkh({ pubkey: keyPair.publicKey });
       const privateKey = keyPair.toWIF();
 
       const walletDiv = document.createElement('div');
       walletDiv.className = 'wallet';
-      walletDiv.innerHTML = \`
-        <strong>Private Key:</strong> \${privateKey}<br>
-        <strong>Address:</strong> \${address}<br>
-        <strong>Balance:</strong> Checking...
-      \`;
+      walletDiv.innerHTML = `
+        <strong>Private Key:</strong> ${privateKey}<br>
+        <strong>Address:</strong> ${address}<br>
+        <strong>Balance:</strong> <span>Loading...</span>
+      `;
 
       const walletsContainer = document.getElementById('wallets');
       walletsContainer.prepend(walletDiv);
 
-      checkBalance(address, walletDiv);
+      await checkBalance(address, walletDiv);
     }
 
     function startAutoReload() {
       if (!autoReload) {
         autoReload = true;
-        reloadInterval = setInterval(generateWallet, 500); // agak pelan biar API gak ban
+        reloadInterval = setInterval(generateWallet, 500);
       } else {
         clearInterval(reloadInterval);
         autoReload = false;
@@ -86,23 +86,25 @@
 
     async function checkBalance(address, walletDiv) {
       try {
-        const response = await fetch(\`https://blockstream.info/api/address/\${address}\`);
+        const response = await fetch(`https://blockstream.info/api/address/${address}`);
         const data = await response.json();
+
         const funded = data.chain_stats.funded_txo_sum;
         const spent = data.chain_stats.spent_txo_sum;
-        const balance = (funded - spent) / 100000000; // Satoshi to BTC
+        const balance = (funded - spent) / 100000000; // satoshi to BTC
 
-        walletDiv.querySelector('strong:nth-child(3)').innerHTML = '<strong>Balance:</strong> ' + balance.toFixed(8) + ' BTC';
+        const balanceSpan = walletDiv.querySelector('span');
+        balanceSpan.innerText = balance.toFixed(8) + ' BTC';
 
         if (balance > 0) {
           walletDiv.classList.add('found');
-          alert('FOUND WALLET WITH BALANCE!\\nAddress: ' + address);
+          alert(`FOUND WALLET WITH BALANCE!\nAddress: ${address}`);
         }
       } catch (error) {
         console.error('Failed to fetch balance:', error);
-        walletDiv.querySelector('strong:nth-child(3)').innerHTML = '<strong>Balance:</strong> Error';
+        const balanceSpan = walletDiv.querySelector('span');
+        balanceSpan.innerText = 'Error';
       }
     }
-  </script>
-</body>
+  </script></body>
 </html>
