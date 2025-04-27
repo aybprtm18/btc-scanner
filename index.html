@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Old Dormant Bitcoin Hunter</title>
+  <title>Bps Btc Hunter</title>
   <link rel="stylesheet" href="css/style.css">
   <style>
     body {
@@ -45,13 +45,12 @@
   </style>
 </head>
 <body>
-  <h1>Old Dormant Bitcoin Hunter</h1>
+  <h1>Bps Btc Hunter</h1>
   <button onclick="generateWallet()">Generate Wallet</button>
   <button onclick="startAutoReload()">Start Auto Reload</button>
   <div id="wallets"></div>
 
-  <script src="js/bitcoinjs-lib.min.js"></script>
-  <script>
+  <script src="https://cdn.jsdelivr.net/npm/bitcoinjs-lib@6.1.0/dist/bitcoinjs-lib.min.js"></script>
     let autoReload = false;
     let reloadInterval;
 
