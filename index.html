@@ -1,20 +1,44 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Active Wallet Scanner from TXT</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Bitcoin Wallet Generator</title>
+  <script src="https://cdn.jsdelivr.net/gh/pointbiz/bitcoinjs-lib-browser@master/bitcoinjs-lib.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bip39@3.0.4/dist/bip39.browser.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.0/build/qrcode.min.js"></script>
+  <style>
+    body { font-family: sans-serif; padding: 20px; max-width: 600px; margin: auto; }
+    h1 { text-align: center; }
+    button { width: 100%; padding: 10px; margin: 20px 0; font-size: 18px; }
+    .output { word-break: break-all; }
+    canvas { display: block; margin: 20px auto; }
+  </style>
 </head>
 <body>
-  <h1>Active BTC Wallet Scanner</h1>
+  <h1>Bitcoin Wallet Generator</h1>
+  <button onclick="generate()">Generate Wallet</button>
+  <div class="output">
+    <p><strong>Address:</strong> <span id="address"></span></p>
+    <p><strong>Private Key (WIF):</strong> <span id="privateKey"></span></p>
+    <canvas id="qrcode"></canvas>
+  </div>
 
-  <input type="file" id="file-input" accept=".txt">
-  <button id="start-scan">Mulai Scan</button>
+  <script>
+    async function generate() {
+      const seed = await bip39.mnemonicToSeed(bip39.generateMnemonic());
+      const root = bitcoinjs.bip32.fromSeed(seed);
+      const child = root.derivePath("m/44'/0'/0'/0/0");
+      const { address } = bitcoinjs.payments.p2pkh({ pubkey: child.publicKey });
+      const wif = child.toWIF();
 
-  <div id="wallet-list"></div>
+      document.getElementById("address").textContent = address;
+      document.getElementById("privateKey").textContent = wif;
 
-  <audio id="alarm-sound" src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg" preload="auto"></audio>
-
-  <script src="main.js"></script>
+      QRCode.toCanvas(document.getElementById("qrcode"), address, function (error) {
+        if (error) console.error(error);
+      });
+    }
+  </script>
 </body>
 </html>
