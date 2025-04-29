@@ -1,3 +1,4 @@
+
 let autoGenerating = false;
 
 async function generateWallet() {
@@ -15,7 +16,7 @@ async function startScanning() {
     updateStatus("Scanning wallet...");
     while (autoGenerating) {
         await generateWallet();
-        await new Promise(resolve => setTimeout(resolve, 200)); // Delay biar tidak overload
+        await new Promise(resolve => setTimeout(resolve, 200));
     }
 }
 
@@ -46,13 +47,13 @@ function displayWallet(address, mnemonic, balanceBTC) {
     const container = document.getElementById("wallet-list");
     const card = document.createElement("div");
     card.className = "wallet-card";
-    card.style.backgroundColor = balanceBTC > 0 ? "#d4edda" : "#ffffff"; // Hijau kalau ada saldo
+    card.style.backgroundColor = balanceBTC > 0 ? "#d4edda" : "#ffffff";
     card.innerHTML = `
         <p><strong>Address:</strong> ${address}</p>
         <p><strong>Mnemonic:</strong> ${mnemonic}</p>
         <p><strong>Balance:</strong> ${balanceBTC} BTC</p>
     `;
-    container.prepend(card); // Wallet baru muncul di atas
+    container.prepend(card);
 }
 
 function playAlarm() {
