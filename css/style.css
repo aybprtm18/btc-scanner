@@ -1,3 +1,4 @@
+
 body {
   font-family: Arial, sans-serif;
   background-color: #f5f5f5;
@@ -43,5 +44,3 @@ button {
 .wallet-card p {
   margin: 5px 0;
 }
-
-/* Jika dark mode mau dibuat nanti gampang tinggal tambah di sini */
